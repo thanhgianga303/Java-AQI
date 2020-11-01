@@ -21,63 +21,140 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 public class Server {
-	public static int buffsize = 512;
-	public static int port = 1234;
-	public static void main(String[] args) throws MalformedURLException, IOException, ParseException {
-		DatagramSocket socket;
-		DatagramPacket dpreceive, dpsend;
-                JSONObject test=getDataCountryApi();
-		try {
-			socket = new DatagramSocket(1234);
-			dpreceive = new DatagramPacket(new byte[buffsize], buffsize);
-			while(true) {
-				socket.receive(dpreceive);
-				String tmp = new String(dpreceive.getData(), 0 , dpreceive.getLength());
-				System.out.println("Server received: " + tmp + " from " + 
-						dpreceive.getAddress().getHostAddress() + " at port " + 
-						socket.getLocalPort());
-				if(tmp.equals("bye")) {
-					System.out.println("Server socket closed");
-					socket.close();
-					break;
-				}
-				// Uppercase, sent back to client
-				tmp = tmp.toUpperCase();
-				dpsend = new DatagramPacket(tmp.getBytes(), tmp.getBytes().length, 
-						dpreceive.getAddress(), dpreceive.getPort());
-				System.out.println("Server sent back " + tmp + " to client");
-				socket.send(dpsend);
-			}
-		} catch (IOException e) { System.err.println(e);}
-	}
-        public static JSONObject getDataCountryApi() throws MalformedURLException, IOException, ParseException
-        {  
-            URL url = new URL("https://api.airvisual.com/v2/countries?key=b57d001e-31c7-499f-9433-f6d2762863ea"); 
-            String inline="";
-            HttpURLConnection conn = (HttpURLConnection)url.openConnection(); 
-            conn.setRequestMethod("GET"); 
-            conn.connect();
-            int responsecode = conn.getResponseCode(); 
-            System.out.print(responsecode);
-            if(responsecode!=200)
-            {
-                throw new RuntimeException("HttpResponseCode:" );
-            }
-            else
-            {
-                Scanner sc = new Scanner(url.openStream());
-                while(sc.hasNext())
-                {
-                    inline+=sc.nextLine();
-                }
-                System.out.println("\n Json data in string format");
-                System.out.println(inline);
-                sc.close();
-            }
-            JSONParser parse = new JSONParser(); 
-            JSONObject jobj = (JSONObject)parse.parse(inline); 
-            return jobj;
-        }
 
-         
+    public static int buffsize = 512;
+    public static int port = 1234;
+    public static String _urlApi = "https://api.airvisual.com/v2/";
+    public static String _key = "b57d001e-31c7-499f-9433-f6d2762863ea";
+    public static String country = "";
+    public static String state = "";
+    public static String city = "";
+
+    public static void main(String[] args) throws MalformedURLException, IOException, ParseException {
+        DatagramSocket socket;
+        DatagramPacket dpreceive, dpsend;
+        try {
+            socket = new DatagramSocket(1234);
+            dpreceive = new DatagramPacket(new byte[buffsize], buffsize);
+            while (true) {
+                socket.receive(dpreceive);
+                String tmp = new String(dpreceive.getData(), 0, dpreceive.getLength());
+//				System.out.println("Server received: " + tmp + " from " + 
+//						dpreceive.getAddress().getHostAddress() + " at port " + 
+//						socket.getLocalPort());
+                                  if(!tmp.contains(";"))
+                                  {
+                                      if(tmp.equals("hello"))
+                                      {
+                                          JSONObject Countries=getListData(_urlApi + "countries?key=" + _key);
+                                          tmp= Countries.toJSONString();
+                                      }
+                                      else
+                                      {
+                                          JSONObject StatesInACountry = getListData(_urlApi + "states?country="+tmp+"&key=" + _key);
+                                          if(StatesInACountry==null)
+                                          {
+                                              tmp="not found state";
+                                          }
+                                          else
+                                          {
+                                              tmp=StatesInACountry.toJSONString();
+                                          }
+                                      }
+                                      
+                                      
+                                      
+                                      
+                                  }
+                                  else
+                                  {
+                                      
+                                     String[] st = tmp.split(";");
+                                     st=editString(st);
+                                     for(int i=0;i<st.length;i++)
+                                    {
+                                     System.out.println(st[i]);
+                                    }
+                                     switch(st.length) {
+                                    case 2:
+                                      country=st[0];
+                                      state=st[1];
+                                      JSONObject CitiesInAState = getListData(_urlApi + "cities?state="+state+"&country="+country+"&key=" + _key);
+                                      if(CitiesInAState==null)
+                                          {
+                                              tmp="not found city";
+                                          }
+                                          else
+                                          {
+                                              tmp=CitiesInAState.toJSONString();
+                                          }
+                                      break;
+                                    case 3:
+                                      country=st[0];
+                                      state=st[1];
+                                      city=st[2];
+                                      JSONObject SpecifiedCity = getListData(_urlApi + "city?city="+city+"&state="+state+"&country="+country+"&key=" + _key);
+                                      if(SpecifiedCity==null)
+                                          {
+                                              tmp="not found aqi";
+                                          }
+                                      
+                                          else
+                                          {
+                                              tmp=SpecifiedCity.toJSONString();
+                                          }
+                                      break;
+                                    default:
+                                      tmp="error";
+                                  }
+
+                                  }
+                if (tmp.equals("bye")) {
+                    System.out.println("Server socket closed");
+                    socket.close();
+                    break;
+                }
+                // Uppercase, sent back to client
+                dpsend = new DatagramPacket(tmp.getBytes(), tmp.getBytes().length,
+                        dpreceive.getAddress(), dpreceive.getPort());
+                System.out.println("Server sent back " + tmp + " to client");
+                socket.send(dpsend);
+            }
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+    }
+    public static String[] editString(String[] str)
+    {
+        for(int i=0;i<str.length;i++)
+        {
+            str[i]=str[i].replace(" ", "+");
+        }
+        return str;
+    }
+    public static JSONObject getListData(String _url) throws MalformedURLException, IOException, ParseException {
+        URL url = new URL(_url);
+        String inline = "";
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        conn.connect();
+        int responsecode = conn.getResponseCode();
+        System.out.print(responsecode);
+        if (responsecode != 200) {
+//                throw new RuntimeException("HttpResponseCode:" );
+            return null;
+        } else {
+            Scanner sc = new Scanner(url.openStream());
+            while (sc.hasNext()) {
+                inline += sc.nextLine();
+            }
+            System.out.println("\n Json data in string format");
+            System.out.println(inline);
+            sc.close();
+        }
+        JSONParser parse = new JSONParser();
+        JSONObject jobj = (JSONObject) parse.parse(inline);
+        return jobj;
+    }
+
 }
