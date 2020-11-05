@@ -28,7 +28,7 @@ public class Client {
 			stdIn = new Scanner(System.in);
 			while(true) {
 				System.out.print("Client input: ");
-				String tmp = stdIn.nextLine();
+				String tmp = stdIn.nextLine().toLowerCase();
 				byte[] data = tmp.getBytes();
 				dpsend = new DatagramPacket(data, data.length, add, destPort);
 				System.out.println("Client sent " + tmp + " to " + add.getHostAddress() + 

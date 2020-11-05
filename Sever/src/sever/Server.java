@@ -16,9 +16,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Scanner;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class Server {
 
@@ -30,7 +29,7 @@ public class Server {
     public static String state = "";
     public static String city = "";
 
-    public static void main(String[] args) throws MalformedURLException, IOException, ParseException {
+    public static void main(String[] args) throws MalformedURLException, IOException {
         DatagramSocket socket;
         DatagramPacket dpreceive, dpsend;
         try {
@@ -39,15 +38,15 @@ public class Server {
             while (true) {
                 socket.receive(dpreceive);
                 String tmp = new String(dpreceive.getData(), 0, dpreceive.getLength());
-//				System.out.println("Server received: " + tmp + " from " + 
-//						dpreceive.getAddress().getHostAddress() + " at port " + 
-//						socket.getLocalPort());
+				System.out.println("Server received: " + tmp + " from " + 
+						dpreceive.getAddress().getHostAddress() + " at port " + 
+						socket.getLocalPort());
                                   if(!tmp.contains(";"))
                                   {
                                       if(tmp.equals("hello"))
                                       {
                                           JSONObject Countries=getListData(_urlApi + "countries?key=" + _key);
-                                          tmp= Countries.toJSONString();
+                                          tmp= getDataToString(Countries,"country");
                                       }
                                       else
                                       {
@@ -58,13 +57,9 @@ public class Server {
                                           }
                                           else
                                           {
-                                              tmp=StatesInACountry.toJSONString();
+                                              tmp= getDataToString(StatesInACountry,"state");
                                           }
-                                      }
-                                      
-                                      
-                                      
-                                      
+                                      }              
                                   }
                                   else
                                   {
@@ -86,7 +81,7 @@ public class Server {
                                           }
                                           else
                                           {
-                                              tmp=CitiesInAState.toJSONString();
+                                              tmp= getDataToString(CitiesInAState,"city");
                                           }
                                       break;
                                     case 3:
@@ -101,7 +96,7 @@ public class Server {
                                       
                                           else
                                           {
-                                              tmp=SpecifiedCity.toJSONString();
+                                              tmp=getDataToString(SpecifiedCity,"pollution");;
                                           }
                                       break;
                                     default:
@@ -132,7 +127,7 @@ public class Server {
         }
         return str;
     }
-    public static JSONObject getListData(String _url) throws MalformedURLException, IOException, ParseException {
+    public static JSONObject getListData(String _url) throws MalformedURLException, IOException {
         URL url = new URL(_url);
         String inline = "";
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -141,7 +136,6 @@ public class Server {
         int responsecode = conn.getResponseCode();
         System.out.print(responsecode);
         if (responsecode != 200) {
-//                throw new RuntimeException("HttpResponseCode:" );
             return null;
         } else {
             Scanner sc = new Scanner(url.openStream());
@@ -152,9 +146,27 @@ public class Server {
             System.out.println(inline);
             sc.close();
         }
-        JSONParser parse = new JSONParser();
-        JSONObject jobj = (JSONObject) parse.parse(inline);
+        JSONObject jobj = new JSONObject(inline);
         return jobj;
+    }
+    public static String getDataToString(JSONObject jobj, String nameDataList)
+    {
+        String data="\n";
+        if(nameDataList.equals("pollution"))
+        {
+            JSONObject element = jobj.getJSONObject("data").getJSONObject("current").getJSONObject("pollution");
+            data=String.valueOf(element.getInt("aqius"));
+        }
+        else
+        {
+            JSONArray jArray= jobj.getJSONArray("data");
+            for (int i = 0; i < jArray.length(); i++) {
+                
+                data += jArray.getJSONObject(i).getString(nameDataList) +"\n";
+            }
+            
+        }
+        return data;
     }
 
 }
