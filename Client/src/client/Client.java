@@ -23,8 +23,8 @@ public class Client {
 		DatagramPacket dpsend, dpreceive;
 		InetAddress add; Scanner stdIn;
 		try {
-			add = InetAddress.getByName(hostname);	//UnknownHostException
-			socket = new DatagramSocket();			//SocketException
+			add = InetAddress.getByName(hostname);
+			socket = new DatagramSocket();
 			stdIn = new Scanner(System.in);
 			while(true) {
 				System.out.print("Client input: ");

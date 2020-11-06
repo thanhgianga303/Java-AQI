@@ -46,18 +46,20 @@ public class Server {
                                       if(tmp.equals("hello"))
                                       {
                                           JSONObject Countries=getListData(_urlApi + "countries?key=" + _key);
-                                          tmp= getDataToString(Countries,"country");
+                                          tmp= "\n*****Countries*****"+getDataToString(Countries,"country");
                                       }
                                       else
                                       {
+                                          tmp=tmp.replace(" ", "+");
+                                          System.out.println(tmp);
                                           JSONObject StatesInACountry = getListData(_urlApi + "states?country="+tmp+"&key=" + _key);
                                           if(StatesInACountry==null)
                                           {
-                                              tmp="not found state";
+                                              tmp="\nnot found state";
                                           }
                                           else
                                           {
-                                              tmp= getDataToString(StatesInACountry,"state");
+                                              tmp="\n*****States*****"+ getDataToString(StatesInACountry,"state");
                                           }
                                       }              
                                   }
@@ -65,7 +67,7 @@ public class Server {
                                   {
                                       
                                      String[] st = tmp.split(";");
-                                     st=editString(st);
+                                     st=editStringArray(st);
                                      for(int i=0;i<st.length;i++)
                                     {
                                      System.out.println(st[i]);
@@ -77,11 +79,11 @@ public class Server {
                                       JSONObject CitiesInAState = getListData(_urlApi + "cities?state="+state+"&country="+country+"&key=" + _key);
                                       if(CitiesInAState==null)
                                           {
-                                              tmp="not found city";
+                                              tmp="\nnot found city";
                                           }
                                           else
                                           {
-                                              tmp= getDataToString(CitiesInAState,"city");
+                                              tmp= "\n*****Cities***** "+getDataToString(CitiesInAState,"city");
                                           }
                                       break;
                                     case 3:
@@ -91,12 +93,12 @@ public class Server {
                                       JSONObject SpecifiedCity = getListData(_urlApi + "city?city="+city+"&state="+state+"&country="+country+"&key=" + _key);
                                       if(SpecifiedCity==null)
                                           {
-                                              tmp="not found aqi";
+                                              tmp="\nnot found aqi";
                                           }
                                       
                                           else
                                           {
-                                              tmp=getDataToString(SpecifiedCity,"pollution");;
+                                              tmp="\nAQI:"+getDataToString(SpecifiedCity,"pollution");;
                                           }
                                       break;
                                     default:
@@ -119,7 +121,7 @@ public class Server {
             System.err.println(e);
         }
     }
-    public static String[] editString(String[] str)
+    public static String[] editStringArray(String[] str)
     {
         for(int i=0;i<str.length;i++)
         {
